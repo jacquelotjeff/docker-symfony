@@ -1,0 +1,46 @@
+version: '2'
+services:
+    db:
+        image: mysql
+        ports:
+            - "3306:3306"
+        environment:
+            MYSQL_ROOT_PASSWORD: root
+            MYSQL_DATABASE: project
+            MYSQL_USER: project
+            MYSQL_PASSWORD: project
+    php:
+        build: ./docker/php-fpm
+        expose:
+            - "9000"
+        volumes:
+            - ./:/var/www/project
+            - ./docker/php-fpm/logs:/var/www/project/app/logs
+        links:
+            - db
+    nginx:
+        build: ./docker/nginx
+        ports:
+            - "80:80"
+        links:
+            - php
+        volumes_from:
+            - php
+        volumes:
+            - ./docker/nginx/logs/:/var/log/nginx
+    elk:
+        image: willdurand/elk
+        ports:
+            - "81:80"
+        volumes:
+            - ./docker/elk/logstash:/etc/logstash
+            - ./docker/elk/logstash/patterns:/opt/logstash/patterns
+        volumes_from:
+            - php
+            - nginx
+    phpmyadmin:
+        image: phpmyadmin/phpmyadmin
+        ports:
+            - "8080:80"
+        links:
+            - db
